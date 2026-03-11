@@ -1,2 +1,0 @@
-this is log.txt file
-[Mon Mar 09 2026 13:50:56 GMT-0700 (Pacific Daylight Time)] Received a GET request at /error
