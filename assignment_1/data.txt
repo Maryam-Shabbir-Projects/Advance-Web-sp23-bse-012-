@@ -1,0 +1,2 @@
+This is sample data for Requirement 4.
+Node.js is powerful for I/O operations.
