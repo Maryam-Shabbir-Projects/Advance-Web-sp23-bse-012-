@@ -1,0 +1,13 @@
+
+<%- include('../partials/header') %>
+<h1><%= post.title %></h1>
+<p>By <%= post.author.username %></p>
+<% if(post.image){ %>
+  <img src="/uploads/<%= post.image %>" width="300"/>
+<% } %>
+<p><%= post.body %></p>
+<% if(userId && post.author._id.toString() === userId){ %>
+  <a href="/posts/edit/<%= post._id %>">Edit</a>
+  <a href="/posts/delete/<%= post._id %>">Delete</a>
+<% } %>
+<a href="/posts">Back to All Posts</a>

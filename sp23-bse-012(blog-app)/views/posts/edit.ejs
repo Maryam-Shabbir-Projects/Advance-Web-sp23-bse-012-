@@ -1,0 +1,15 @@
+
+<%- include('../partials/header') %>
+<h1>Edit Post</h1>
+<form action="/posts/edit/<%= post._id %>" method="POST" enctype="multipart/form-data">
+  <input type="text" name="title" value="<%= post.title %>" required/><br/>
+  <textarea name="body" id="editor"><%= post.body %></textarea><br/>
+  <% if(post.image){ %>
+    <img src="/uploads/<%= post.image %>" width="200"/>
+  <% } %>
+  <input type="file" name="image"/><br/>
+  <button type="submit">Update</button>
+</form>
+
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>tinymce.init({ selector:'#editor' });</script>

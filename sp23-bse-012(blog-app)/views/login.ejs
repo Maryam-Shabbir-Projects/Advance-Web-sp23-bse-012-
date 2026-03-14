@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #FFF8F0; margin:0; padding:0; color:#333333;">
+
+  <!-- Header -->
+  <div style="background-color:#FF6B6B; color:white; padding:25px; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h1 style="margin:0; font-size:2rem;">Welcome Back!</h1>
+    <p style="margin:5px 0 0 0; font-size:1rem;">Login to continue reading and posting</p>
+  </div>
+
+  <!-- Form Container -->
+  <div style="max-width:400px; margin:50px auto; background:white; padding:35px; border-radius:10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <form action="/login" method="POST" style="display:flex; flex-direction:column; gap:20px;">
+
+        <label style="font-weight:bold;">Email</label>
+        <input type="email" name="email" required 
+               style="padding:12px; font-size:1rem; border:1px solid #ddd; border-radius:5px; width:100%;">
+
+        <label style="font-weight:bold;">Password</label>
+        <input type="password" name="password" required 
+               style="padding:12px; font-size:1rem; border:1px solid #ddd; border-radius:5px; width:100%;">
+
+        <button type="submit" 
+                style="background-color:#FF6B6B; color:white; padding:14px; font-size:1rem; border:none; border-radius:5px; cursor:pointer; transition:0.3s;">
+          Login
+        </button>
+
+    </form>
+
+    <p style="text-align:center; margin-top:20px; font-size:0.95rem;">
+      Don't have an account? <a href="/register" style="text-decoration:none; color:#FF6B6B; font-weight:bold;">Register Here</a>
+    </p>
+  </div>
+
+</body>
+</html>

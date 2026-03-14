@@ -1,0 +1,946 @@
+TASK 01 :
+
+1)run -> npm init -y
+
+2)run -> npm install express mongoose ejs bcrypt express-session
+
+3)create ->  app.js
+
+4)paste in app.js -> 
+// app.js
+const express = require('express');
+const app = express();
+
+const mongoose = require('mongoose');
+
+const session = require('express-session');
+
+const authRoutes = require('./routes/authRoutes');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://127.0.0.1:27017/blogDB') // just URL
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.log(err));
+
+// Middleware
+app.use(express.urlencoded({ extended: true })); // to parse form data
+app.use(express.static('public')); // for CSS or JS files
+app.set('view engine', 'ejs');
+
+// Session setup
+app.use(session({
+    secret: 'blogSecret123',
+    resave: false,
+    saveUninitialized: false
+}));
+
+// Routes
+app.use('/', authRoutes);
+
+// Start server
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+
+5)create folder/files as ->
+blog-app(main folder)/
+│
+├── controllers/
+├── models/
+├── routes/
+    └── authRoutes.js
+├── views/
+│   └── auth/
+├── public/
+│   └── css/
+
+6)in  routes/ authRoutes.js code ->
+// routes/authRoutes.js
+const express = require('express');
+const router = express.Router();
+
+router.get('/', (req, res) => {
+    res.send('Auth routes working!');
+});
+
+module.exports = router;
+
+7) run -> nodemon app.js and
+  check -> localhost/3000
+
+TASK 02:
+
+8) run -> npm install express-fileupload
+
+9) update folder structure ->
+blog-app/
+├── controllers/
+│   └── postController.js
+├── models/
+│   └── Post.js
+├── routes/
+│   └── postRoutes.js
+├── views/
+│   └── posts/
+│       ├── index.ejs
+│       ├── create.ejs
+│       ├── edit.ejs
+        |__ single.ejs
+    |__partials/
+        |__ header.ejs
+    |__home.ejs
+
+└── public/
+    └── uploads/   
+
+10)models/post.js ->
+// models/Post.js
+const mongoose = require('mongoose');
+
+const postSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    body:  { type: String, required: true },
+    image: { type: String }, // store image filename
+    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Post', postSchema);
+
+11)Create controllers/postController.js:
+// controllers/postController.js
+const Post = require('../models/Post');
+const path = require('path');
+const fs = require('fs');
+
+// List all posts
+exports.getAllPosts = async (req, res) => {
+    const posts = await Post.find().populate('author', 'username');
+    res.render('posts/index', { posts, userId: req.session.userId });
+};
+
+// Show single post
+exports.getPost = async (req, res) => {
+    const post = await Post.findById(req.params.id).populate('author', 'username');
+    if (!post) return res.redirect('/posts');
+    res.render('posts/single', { post, userId: req.session.userId });
+};
+
+// Show create post form
+exports.getCreatePost = (req, res) => res.render('posts/create');
+
+// Handle create post
+exports.postCreatePost = async (req, res) => {
+    try {
+        const { title, body } = req.body;
+        let imageName = '';
+
+        if (req.files && req.files.image) {
+            const image = req.files.image;
+            imageName = Date.now() + path.extname(image.name);
+            image.mv(path.join(__dirname, '../public/uploads/', imageName));
+        }
+
+        const post = new Post({
+            title,
+            body,
+            image: imageName,
+            author: req.session.userId
+        });
+
+        await post.save();
+        res.redirect('/posts');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/posts/create');
+    }
+};
+
+// Show edit post form
+exports.getEditPost = async (req, res) => {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.redirect('/posts');
+    if (post.author.toString() !== req.session.userId) return res.redirect('/posts'); // only author can edit
+    res.render('posts/edit', { post });
+};
+
+// Handle update post
+exports.postEditPost = async (req, res) => {
+    try {
+        const { title, body } = req.body;
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.redirect('/posts');
+        if (post.author.toString() !== req.session.userId) return res.redirect('/posts'); // only author can update
+
+        if (req.files && req.files.image) {
+            if (post.image) fs.unlinkSync(path.join(__dirname, '../public/uploads/', post.image));
+            const image = req.files.image;
+            const imageName = Date.now() + path.extname(image.name);
+            image.mv(path.join(__dirname, '../public/uploads/', imageName));
+            post.image = imageName;
+        }
+
+        post.title = title;
+        post.body = body;
+        await post.save();
+        res.redirect('/posts/' + post._id);
+    } catch (err) {
+        console.error(err);
+        res.redirect('/posts');
+    }
+};
+
+// Delete post
+exports.deletePost = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.redirect('/posts');
+        if (post.author.toString() !== req.session.userId) return res.redirect('/posts'); // only author can delete
+
+        if (post.image) fs.unlinkSync(path.join(__dirname, '../public/uploads/', post.image));
+        await Post.findByIdAndDelete(req.params.id);
+        res.redirect('/posts');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/posts');
+    }
+};
+
+12)Create routes/postRoutes.js:
+// routes/postRoutes.js
+const express = require('express');
+const router = express.Router();
+const postController = require('../controllers/postController');
+const fileUpload = require('express-fileupload');
+
+router.use(fileUpload());
+
+// Middleware to check login
+function isAuth(req, res, next) {
+    if (!req.session.userId) return res.redirect('/login');
+    next();
+}
+
+// CRUD Routes
+router.get('/', postController.getAllPosts);            // Read all posts
+router.get('/create', isAuth, postController.getCreatePost); // Create form
+router.post('/create', isAuth, postController.postCreatePost); // Create submit
+router.get('/:id', postController.getPost);             // Read single post
+router.get('/edit/:id', isAuth, postController.getEditPost);  // Edit form
+router.post('/edit/:id', isAuth, postController.postEditPost); // Edit submit
+router.get('/delete/:id', isAuth, postController.deletePost);  // Delete post
+
+module.exports = router;
+
+13) 1-Include Post Routes in app.js:
+const postRoutes = require('./routes/postRoutes');
+app.use('/posts', postRoutes);
+       and
+2-Update your home route in app.js:
+app.get('/', (req, res) => {
+    res.render('home', { userId: req.session.userId });
+});
+
+3-add middleware before routes:
+app.use((req, res, next) => {
+    res.locals.userId = req.session.userId;
+    next();
+});
+14)views/posts/index.ejs:
+<%- include('../partials/header') %>
+
+<h1>All Posts</h1>
+
+<ul>
+  <% posts.forEach(post => { %>
+    <li>
+      <h2><a href="/posts/<%= post._id %>"><%= post.title %></a></h2>
+      <p>By <%= post.author.username %></p>
+      <% if(post.image){ %>
+        <img src="/uploads/<%= post.image %>" width="200"/>
+      <% } %>
+      <p><%= post.body.substring(0, 100) %>...</p>
+      <% if(userId && post.author._id.toString() === userId){ %>
+        <a href="/posts/edit/<%= post._id %>">Edit</a> |
+        <a href="/posts/delete/<%= post._id %>">Delete</a>
+      <% } %>
+    </li>
+  <% }) %>
+</ul>
+
+15)views/posts/create.ejs:
+<%- include('../partials/header') %>
+<h1>Create Post</h1>
+<form action="/posts/create" method="POST" enctype="multipart/form-data">
+  <input type="text" name="title" placeholder="Title" required/><br/>
+  <textarea name="body" id="editor" placeholder="Content"></textarea><br/>
+  <input type="file" name="image"/><br/>
+  <button type="submit">Create</button>
+</form>
+
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>tinymce.init({ selector:'#editor' });</script>
+
+16)views/posts/single.ejs:
+<%- include('../partials/header') %>
+<h1><%= post.title %></h1>
+<p>By <%= post.author.username %></p>
+<% if(post.image){ %>
+  <img src="/uploads/<%= post.image %>" width="300"/>
+<% } %>
+<p><%= post.body %></p>
+<% if(userId && post.author._id.toString() === userId){ %>
+  <a href="/posts/edit/<%= post._id %>">Edit</a>
+  <a href="/posts/delete/<%= post._id %>">Delete</a>
+<% } %>
+<a href="/posts">Back to All Posts</a>
+
+17)views/posts/edit.ejs:
+<%- include('../partials/header') %>
+<h1>Edit Post</h1>
+<form action="/posts/edit/<%= post._id %>" method="POST" enctype="multipart/form-data">
+  <input type="text" name="title" value="<%= post.title %>" required/><br/>
+  <textarea name="body" id="editor"><%= post.body %></textarea><br/>
+  <% if(post.image){ %>
+    <img src="/uploads/<%= post.image %>" width="200"/>
+  <% } %>
+  <input type="file" name="image"/><br/>
+  <button type="submit">Update</button>
+</form>
+
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>tinymce.init({ selector:'#editor' });</script>
+
+18)views/partials/header.ejs:
+<!-- views/partials/header.ejs -->
+<nav style="background:#eee; padding:10px;">
+  <a href="/">Home</a> |
+  <a href="/posts">All Posts</a> |
+  <a href="/posts/create">Create Post</a> |
+  <% if(userId){ %>
+    <a href="/logout">Logout</a>
+  <% } else { %>
+    <a href="/login">Login</a> |
+    <a href="/register">Register</a>
+  <% } %>
+</nav>
+<hr/>
+
+19)views/home.ejs:
+<%- include('partials/header') %>
+
+<h1>Welcome to My Blog</h1>
+<p>This is the home page.</p>
+<p><a href="/posts">View All Posts</a></p>
+
+20)update app.js:
+// app.js
+const express = require('express');
+const app = express();
+
+const mongoose = require('mongoose');
+const session = require('express-session');
+
+const authRoutes = require('./routes/authRoutes');
+const postRoutes = require('./routes/postRoutes');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://127.0.0.1:27017/blogDB')
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.log(err));
+
+// Middleware to parse form data and serve static files
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.set('view engine', 'ejs');
+
+// === Session setup MUST be before using req.session ===
+app.use(session({
+    secret: 'blogSecret123',
+    resave: false,
+    saveUninitialized: false
+}));
+
+// Make userId available in all views
+app.use((req, res, next) => {
+    res.locals.userId = req.session?.userId || null; // safe check
+    next();
+});
+
+// Routes
+app.get('/', (req, res) => {
+    res.render('home'); // userId is available in EJS via res.locals
+});
+
+// Auth routes
+app.use('/', authRoutes);
+
+// Post routes
+app.use('/posts', postRoutes);
+
+// Start server
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+
+21)update routes/authRoutes.js:
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+
+// Registration
+router.get('/register', authController.getRegister);
+router.post('/register', authController.postRegister);
+
+// Login
+router.get('/login', authController.getLogin);
+router.post('/login', authController.postLogin);
+
+// Logout
+router.get('/logout', authController.logout);
+
+module.exports = router;
+
+22) check -> localhost/3000
+
+TASK NO 03:
+
+23)Create a file: middleware/logger.js:
+// middleware/logger.js
+module.exports = (req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+    next(); // Important! Continue to next middleware
+};
+
+24)in app.js:
+const logger = require('./middleware/logger');
+
+// Use this at the top, before routes
+app.use(logger);
+
+25)Create: middleware/auth.js:
+// middleware/auth.js
+module.exports = (req, res, next) => {
+    if (!req.session?.userId) {
+        // User not logged in
+        return res.redirect('/login');
+    }
+    next();
+};
+
+26)in app.js:
+const isAuth = require('./middleware/auth');
+
+// Protect dashboard or post creation/edit/deletion
+router.get('/create', isAuth, postController.getCreatePost);
+router.post('/create', isAuth, postController.postCreatePost);
+router.get('/edit/:id', isAuth, postController.getEditPost);
+router.post('/edit/:id', isAuth, postController.postEditPost);
+router.get('/delete/:id', isAuth, postController.deletePost);
+
+27)Create: middleware/imageValidator.js:
+// middleware/imageValidator.js
+module.exports = (req, res, next) => {
+    if (!req.files || !req.files.image) return next(); // No file uploaded, continue
+
+    const image = req.files.image;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+
+    if (!allowedTypes.includes(image.mimetype)) {
+        return res.status(400).send('Only images (jpeg, png, gif) are allowed.');
+    }
+
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (image.size > maxSize) {
+        return res.status(400).send('Image size should not exceed 2MB.');
+    }
+
+    next(); // Image is valid
+};
+
+28)in routes/postRoutes.js:
+const validateImage = require('../middleware/imageValidator');
+
+router.post('/create', isAuth, validateImage, postController.postCreatePost);
+router.post('/edit/:id', isAuth, validateImage, postController.postEditPost);
+
+29)corrected app.js:
+// app.js
+const express = require('express');
+const app = express();
+
+const mongoose = require('mongoose');
+const session = require('express-session');
+
+const authRoutes = require('./routes/authRoutes');
+const postRoutes = require('./routes/postRoutes');
+
+const logger = require('./middleware/logger');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://127.0.0.1:27017/blogDB')
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.log(err));
+
+// Middleware
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.set('view engine', 'ejs');
+app.use(logger);
+
+app.use(session({
+    secret: 'blogSecret123',
+    resave: false,
+    saveUninitialized: false
+}));
+
+// Make userId available in all views
+app.use((req, res, next) => {
+    res.locals.userId = req.session?.userId || null;
+    next();
+});
+
+// Home route
+app.get('/', (req, res) => {
+    res.render('home');
+});
+
+// Auth routes
+app.use('/', authRoutes);
+
+// Post routes
+app.use('/posts', postRoutes);
+
+// Start server
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+
+30)corrected routes/postRoutes.js:
+const express = require('express');
+const router = express.Router();
+const fileUpload = require('express-fileupload');
+const postController = require('../controllers/postController');
+
+const isAuth = require('../middleware/auth');
+const validateImage = require('../middleware/imageValidator');
+
+router.use(fileUpload());
+
+// CRUD Routes
+router.get('/', postController.getAllPosts);                    // Read all posts
+router.get('/create', isAuth, postController.getCreatePost);    // Create form
+router.post('/create', isAuth, validateImage, postController.postCreatePost); // Create submit
+router.get('/:id', postController.getPost);                     // Read single post
+router.get('/edit/:id', isAuth, postController.getEditPost);    // Edit form
+router.post('/edit/:id', isAuth, validateImage, postController.postEditPost); // Edit submit
+router.get('/delete/:id', isAuth, postController.deletePost);   // Delete post
+
+module.exports = router;
+
+31)create controllers/authController.js:
+const bcrypt = require('bcrypt');
+const User = require('../models/User');
+
+// show register page
+exports.getRegister = (req, res) => {
+    res.render('register');
+};
+
+// register user
+exports.postRegister = async (req, res) => {
+
+    const { username, email, password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+        username,
+        email,
+        password: hashedPassword
+    });
+
+    req.session.userId = user._id;
+
+    res.redirect('/posts');
+};
+
+// show login page
+exports.getLogin = (req, res) => {
+    res.render('login');
+};
+
+// login user
+exports.postLogin = async (req, res) => {
+
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        return res.redirect('/login');
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+        return res.redirect('/login');
+    }
+
+    req.session.userId = user._id;
+
+    res.redirect('/posts');
+};
+
+// logout
+exports.logout = (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/');
+    });
+};
+
+32)create -> models/User.js:
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+
+    username: {
+        type: String,
+        required: true
+    },
+
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+
+    password: {
+        type: String,
+        required: true
+    }
+
+});
+
+module.exports = mongoose.model('User', userSchema);
+
+33)update models/post.js:
+const mongoose = require('mongoose');
+
+const postSchema = new mongoose.Schema({
+
+    title: {
+        type: String,
+        required: true
+    },
+
+    content: {
+        type: String,
+        required: true
+    },
+
+    image: {
+        type: String
+    },
+
+    author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+
+});
+
+module.exports = mongoose.model('Post', postSchema);
+
+34)Create views/login.ejs:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+
+<h2>Login</h2>
+
+<form action="/login" method="POST">
+
+    <label>Email</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label>Password</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <button type="submit">Login</button>
+
+</form>
+
+<br>
+
+<a href="/register">Register Here</a>
+
+</body>
+</html>
+
+35)Create views/register.ejs:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+</head>
+<body>
+
+<h2>Register</h2>
+
+<form action="/register" method="POST">
+
+    <label>Username</label><br>
+    <input type="text" name="username" required><br><br>
+
+    <label>Email</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label>Password</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <button type="submit">Register</button>
+
+</form>
+
+<br>
+
+<a href="/login">Login</a>
+
+</body>
+</html>
+
+36)updated views/creste.ejs:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Post</title>
+</head>
+<body>
+
+<h1>Create Blog Post</h1>
+
+<a href="/posts">All Posts</a>
+<a href="/">Home</a>
+
+<hr>
+
+<form action="/posts/create" method="POST" enctype="multipart/form-data">
+
+    <label>Title</label><br>
+    <input type="text" name="title" required><br><br>
+
+    <label>Content</label><br>
+    <textarea name="content" rows="5" cols="40" required></textarea><br><br>
+
+    <label>Image</label><br>
+    <input type="file" name="image"><br><br>
+
+    <button type="submit">Create Post</button>
+
+</form>
+
+</body>
+</html>
+
+37)update postController.js:
+const Post = require('../models/Post');
+const path = require('path');
+const fs = require('fs');
+
+// List all posts
+exports.getAllPosts = async (req, res) => {
+try {
+const posts = await Post.find().populate('author', 'username');
+res.render('posts/index', { posts, userId: req.session.userId });
+} catch (err) {
+console.error(err);
+res.redirect('/');
+}
+};
+
+// Show single post
+exports.getPost = async (req, res) => {
+try {
+const post = await Post.findById(req.params.id).populate('author', 'username');
+if (!post) return res.redirect('/posts');
+res.render('posts/single', { post, userId: req.session.userId });
+} catch (err) {
+console.error(err);
+res.redirect('/posts');
+}
+};
+
+// Show create post form
+exports.getCreatePost = (req, res) => {
+res.render('posts/create');
+};
+
+// Handle create post
+exports.postCreatePost = async (req, res) => {
+try {
+const { title, content } = req.body;
+let imageName = '';
+
+```
+    if (req.files && req.files.image) {
+        const image = req.files.image;
+        imageName = Date.now() + path.extname(image.name);
+
+        image.mv(path.join(__dirname, '../public/uploads/', imageName));
+    }
+
+    const post = new Post({
+        title,
+        content,
+        image: imageName,
+        author: req.session.userId
+    });
+
+    await post.save();
+    res.redirect('/posts');
+
+} catch (err) {
+    console.error(err);
+    res.redirect('/posts/create');
+}
+```
+
+};
+
+// Show edit post form
+exports.getEditPost = async (req, res) => {
+try {
+const post = await Post.findById(req.params.id);
+
+```
+    if (!post) return res.redirect('/posts');
+    if (post.author.toString() !== req.session.userId) return res.redirect('/posts');
+
+    res.render('posts/edit', { post });
+
+} catch (err) {
+    console.error(err);
+    res.redirect('/posts');
+}
+```
+
+};
+
+// Handle update post
+exports.postEditPost = async (req, res) => {
+try {
+const { title, content } = req.body;
+
+```
+    const post = await Post.findById(req.params.id);
+
+    if (!post) return res.redirect('/posts');
+    if (post.author.toString() !== req.session.userId) return res.redirect('/posts');
+
+    if (req.files && req.files.image) {
+
+        if (post.image) {
+            fs.unlinkSync(path.join(__dirname, '../public/uploads/', post.image));
+        }
+
+        const image = req.files.image;
+        const imageName = Date.now() + path.extname(image.name);
+
+        image.mv(path.join(__dirname, '../public/uploads/', imageName));
+
+        post.image = imageName;
+    }
+
+    post.title = title;
+    post.content = content;
+
+    await post.save();
+
+    res.redirect('/posts/' + post._id);
+
+} catch (err) {
+    console.error(err);
+    res.redirect('/posts');
+}
+```
+
+};
+
+// Delete post
+exports.deletePost = async (req, res) => {
+try {
+const post = await Post.findById(req.params.id);
+
+```
+    if (!post) return res.redirect('/posts');
+    if (post.author.toString() !== req.session.userId) return res.redirect('/posts');
+
+    if (post.image) {
+        fs.unlinkSync(path.join(__dirname, '../public/uploads/', post.image));
+    }
+
+    await Post.findByIdAndDelete(req.params.id);
+
+    res.redirect('/posts');
+
+} catch (err) {
+    console.error(err);
+    res.redirect('/posts');
+}
+```
+
+};
+
+38)update index.ejs:
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>All Posts</title>
+</head>
+<body>
+
+<h1>All Blog Posts</h1>
+
+<a href="/posts/create">Create Post</a> <a href="/logout">Logout</a>
+
+<hr>
+
+<% if(posts.length === 0){ %> <h3>No posts available</h3>
+<% } %>
+
+<% posts.forEach(post => { %>
+
+```
+<div style="border:1px solid black; padding:10px; margin-bottom:15px;">
+
+    <h2><%= post.title %></h2>
+
+    <p><%= post.content %></p>
+
+    <% if(post.image){ %>
+        <img src="/uploads/<%= post.image %>" width="200">
+    <% } %>
+
+    <p>Author: <%= post.author ? post.author.username : "Unknown" %></p>
+
+    <a href="/posts/<%= post._id %>">View</a>
+
+    <% if(userId && post.author && post.author._id.toString() === userId){ %>
+        | <a href="/posts/edit/<%= post._id %>">Edit</a>
+        | <a href="/posts/delete/<%= post._id %>">Delete</a>
+    <% } %>
+
+</div>
+```
+
+<% }) %>
+
+</body>
+</html>
+
+39)

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Post</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f5f5f5; margin:0; padding:0;">
+
+  <!-- Header -->
+  <div style="background-color:#0d6efd; color:white; padding:20px; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h1 style="margin:0;">Create Blog Post</h1>
+  </div>
+
+  <!-- Navigation -->
+  <div style="max-width:800px; margin:20px auto; text-align:center;">
+    <a href="/posts" style="text-decoration:none; color:#0d6efd; margin-right:15px; font-weight:bold;">All Posts</a>
+    <a href="/" style="text-decoration:none; color:#0d6efd; font-weight:bold;">Home</a>
+  </div>
+
+  <hr style="border:0; height:1px; background:#ddd; max-width:800px; margin:0 auto 20px auto;">
+
+  <!-- Form -->
+  <div style="max-width:800px; margin:0 auto; background:white; padding:30px; border-radius:8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <form action="/posts/create" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:15px;">
+
+        <label style="font-weight:bold;">Title</label>
+        <input type="text" name="title" required style="padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:4px; width:100%;">
+
+        <label style="font-weight:bold;">Content</label>
+        <textarea name="content" rows="6" required style="padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:4px; width:100%;"></textarea>
+
+        <label style="font-weight:bold;">Image</label>
+        <input type="file" name="image" style="padding:5px;">
+
+        <button type="submit" style="background-color:#0d6efd; color:white; padding:12px; font-size:1rem; border:none; border-radius:4px; cursor:pointer; transition:0.3s;">
+          Create Post
+        </button>
+
+    </form>
+  </div>
+
+</body>
+</html>
