@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hostel Details - Vehari Map</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+h1, h2 {
+    text-align: center;
+}
+#map {
+    height: 500px;
+    width: 100%;
+    border: 2px solid #555;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.info {
+    max-width: 600px;
+    margin: auto;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+.info p {
+    font-size: 16px;
+    margin: 5px 0;
+}
+#routeBtn, #fallbackBtn {
+    padding: 8px 12px;
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+#routeBtn { background-color: #1E90FF; color: white; }
+#fallbackBtn { background-color: #FF8C00; color: white; }
+</style>
+</head>
+<body>
+
+<h1><%= hostel.name %></h1>
+
+<div class="info">
+    <p><strong>Address:</strong> <%= hostel.address %></p>
+    <p><strong>Price:</strong> Rs. <%= hostel.price %></p>
+    <p><strong>Description:</strong> <%= hostel.description || "N/A" %></p>
+    <p><strong>Distance from Bus Stand:</strong> <span id="busDistance">Calculating...</span> km</p>
+    <p><strong>Distance from Market:</strong> <span id="marketDistance">Calculating...</span> km</p>
+    <p><strong>Your Distance:</strong> <span id="userDistance">Calculating...</span> km</p>
+    <button id="routeBtn">Get Route</button>
+    <button id="fallbackBtn">Set My Location Manually (Fallback)</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+<script>
+// -----------------------------
+// Hostel coordinates
+// -----------------------------
+const hostelLat = <%= hostel.latitude %>;
+const hostelLng = <%= hostel.longitude %>;
+
+// -----------------------------
+// Static locations
+// -----------------------------
+const busStand = { lat: 30.046, lng: 72.347 };
+const market = { lat: 30.0455, lng: 72.349 };
+
+// -----------------------------
+// Initialize Map
+// -----------------------------
+const map = L.map('map', { center: [hostelLat, hostelLng], zoom: 16 });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+}).addTo(map);
+
+// Hostel marker
+const hostelMarker = L.marker([hostelLat, hostelLng])
+    .addTo(map)
+    .bindPopup(`<b><%= hostel.name %></b><br><%= hostel.address %>`)
+    .openPopup();
+
+// Bus Stand & Market markers
+L.marker([busStand.lat, busStand.lng]).addTo(map).bindPopup("Bus Stand");
+L.marker([market.lat, market.lng]).addTo(map).bindPopup("Market");
+
+// -----------------------------
+// User location
+// -----------------------------
+let userLat = null;
+let userLng = null;
+let routeControl = null;
+
+// Haversine formula
+function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// Update distances
+function updateDistance() {
+    // User distance
+    if(userLat && userLng){
+        const distance = haversine(userLat, userLng, hostelLat, hostelLng);
+        document.getElementById('userDistance').innerText = distance.toFixed(2) + " km";
+    } else {
+        document.getElementById('userDistance').innerText = "Location not available";
+    }
+
+    // Distances from static points
+    const distBus = haversine(hostelLat, hostelLng, busStand.lat, busStand.lng);
+    const distMarket = haversine(hostelLat, hostelLng, market.lat, market.lng);
+
+    document.getElementById('busDistance').innerText = distBus.toFixed(2);
+    document.getElementById('marketDistance').innerText = distMarket.toFixed(2);
+}
+
+// Try to get user location
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+
+        L.marker([userLat, userLng], {icon: L.icon({
+            iconUrl:'https://cdn-icons-png.flaticon.com/512/64/64113.png',
+            iconSize:[30,30],
+            iconAnchor:[15,30],
+            popupAnchor:[0,-30]
+        })}).addTo(map).bindPopup("Your Location").openPopup();
+
+        updateDistance();
+    }, err => {
+        console.warn("Geolocation error:", err.message);
+        updateDistance();
+    });
+} else {
+    alert("Geolocation is not supported by your browser.");
+}
+
+// -----------------------------
+// Route Button
+// -----------------------------
+document.getElementById('routeBtn').addEventListener('click', () => {
+    if(!userLat || !userLng){
+        alert("Your location is not available. Please allow location or use fallback.");
+        return;
+    }
+
+    if(routeControl) map.removeControl(routeControl);
+
+    routeControl = L.Routing.control({
+        waypoints: [
+            L.latLng(userLat, userLng),
+            L.latLng(hostelLat, hostelLng)
+        ],
+        lineOptions: { styles: [{ color: 'red', opacity: 1, weight: 6 }] },
+        router: L.Routing.osrmv1({ language: 'en', profile: 'car' }),
+        createMarker: function() { return null; },
+        show: true,
+        addWaypoints: false
+    }).addTo(map);
+});
+
+// -----------------------------
+// Fallback button
+// -----------------------------
+document.getElementById('fallbackBtn').addEventListener('click', () => {
+    userLat = 29.6920; // Example fallback
+    userLng = 72.5721;
+
+    L.marker([userLat, userLng], {icon: L.icon({
+        iconUrl:'https://cdn-icons-png.flaticon.com/512/64/64113.png',
+        iconSize:[30,30],
+        iconAnchor:[15,30],
+        popupAnchor:[0,-30]
+    })}).addTo(map).bindPopup("Your Location (Fallback)").openPopup();
+
+    updateDistance();
+    alert("Fallback location set to Hasilpur");
+});
+</script>
+
+</body>
+</html>

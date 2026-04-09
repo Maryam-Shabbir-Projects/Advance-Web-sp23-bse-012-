@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Hostel</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+body {
+  font-family: Arial;
+  margin: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+form {
+  max-width: 600px;
+  margin: auto;
+}
+
+input, textarea, button {
+  width: 100%;
+  padding: 8px;
+  margin: 6px 0;
+}
+
+#map {
+  height: 400px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+}
+
+.search-box {
+  position: relative;
+}
+
+#suggestions {
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+#suggestions li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+#suggestions li:hover {
+  background: #f0f0f0;
+}
+
+button {
+  background-color: #1E90FF;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0d6efd;
+}
+</style>
+</head>
+
+<body>
+
+<h1>➕ Add New Hostel</h1>
+
+<form id="addHostelForm">
+
+  <label>Name:</label>
+  <input type="text" name="name" required>
+
+  <label>Address:</label>
+  <input type="text" id="address" name="address" required>
+
+  <label>Price:</label>
+  <input type="number" name="price" required>
+
+  <label>Description:</label>
+  <textarea name="description"></textarea>
+
+  <!-- 🔍 Live Search -->
+  <label>Search Location:</label>
+  <div class="search-box">
+    <input type="text" id="locationSearch" placeholder="Search in Vehari..." oninput="liveSearch()">
+    <ul id="suggestions"></ul>
+  </div>
+
+  <!-- 🗺️ Map -->
+  <div id="map"></div>
+
+  <!-- Hidden fields -->
+  <input type="hidden" name="latitude" id="latitude">
+  <input type="hidden" name="longitude" id="longitude">
+
+  <button type="submit">Add Hostel</button>
+
+</form>
+
+<br>
+<a href="/admin">⬅ Back to Dashboard</a>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+// -------------------------
+// Initialize Map
+// -------------------------
+const map = L.map('map').setView([30.045, 72.348], 16);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+let marker;
+let debounceTimer;
+
+// -------------------------
+// LIVE SEARCH (Vehari only)
+// -------------------------
+function liveSearch() {
+  const query = document.getElementById("locationSearch").value;
+
+  clearTimeout(debounceTimer);
+
+  if (!query) {
+    document.getElementById("suggestions").innerHTML = "";
+    return;
+  }
+
+  debounceTimer = setTimeout(() => {
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=72.30,30.02,72.40,30.08&bounded=1&limit=5`)
+      .then(res => res.json())
+      .then(data => showSuggestions(data))
+      .catch(err => console.error(err));
+  }, 400);
+}
+
+// -------------------------
+// Show Suggestions
+// -------------------------
+function showSuggestions(places) {
+  const list = document.getElementById("suggestions");
+  list.innerHTML = "";
+
+  places.forEach(place => {
+    const li = document.createElement("li");
+    li.innerText = place.display_name;
+
+    li.onclick = () => {
+      selectLocation(place);
+      list.innerHTML = "";
+    };
+
+    list.appendChild(li);
+  });
+}
+
+// -------------------------
+// Select Location
+// -------------------------
+function selectLocation(place) {
+  const lat = parseFloat(place.lat);
+  const lon = parseFloat(place.lon);
+
+  setMarker(lat, lon, place.display_name);
+
+  document.getElementById("locationSearch").value = place.display_name;
+  document.getElementById("address").value = place.display_name;
+}
+
+// -------------------------
+// Set Marker
+// -------------------------
+function setMarker(lat, lon, name = "Selected Location") {
+
+  if (marker) {
+    map.removeLayer(marker);
+  }
+
+  marker = L.marker([lat, lon], { draggable: true }).addTo(map)
+    .bindPopup(`<b>${name}</b>`)
+    .openPopup();
+
+  map.setView([lat, lon], 16);
+
+  // Set hidden inputs
+  document.getElementById("latitude").value = lat;
+  document.getElementById("longitude").value = lon;
+
+  // 🔥 Drag feature (ADVANCED)
+  marker.on("dragend", function(e) {
+    const pos = marker.getLatLng();
+    document.getElementById("latitude").value = pos.lat;
+    document.getElementById("longitude").value = pos.lng;
+  });
+}
+
+// -------------------------
+// Click Map to Select
+// -------------------------
+map.on('click', function(e) {
+  setMarker(e.latlng.lat, e.latlng.lng, "Selected by click");
+});
+
+// -------------------------
+// Submit Form
+// -------------------------
+document.getElementById("addHostelForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const form = e.target;
+
+  if (!form.latitude.value || !form.longitude.value) {
+    alert("Please select a location");
+    return;
+  }
+
+  const data = {
+    name: form.name.value,
+    address: form.address.value,
+    price: form.price.value,
+    description: form.description.value,
+    latitude: form.latitude.value,
+    longitude: form.longitude.value
+  };
+
+  try {
+    const res = await fetch("/api/hostels", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      alert("Hostel added successfully!");
+      window.location.href = "/admin";
+    } else {
+      alert(result.error || "Error");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
+  }
+});
+</script>
+
+</body>
+</html>

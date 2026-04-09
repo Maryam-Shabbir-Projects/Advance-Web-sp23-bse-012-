@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - Vehari Map</title>
+
+<style>
+/* GLOBAL STYLES */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f6fa;
+    margin: 0;
+    color: #333;
+}
+h3 {
+    margin: 0 0 15px 0;
+}
+
+/* HEADER */
+.header {
+    background: #34495e;
+    color: #ecf0f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    font-size: 22px;
+    font-weight: 600;
+}
+.logout-btn {
+    background: #e74c3c;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+.logout-btn:hover {
+    background: #c0392b;
+}
+
+/* CONTAINER */
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* ADD BUTTON */
+.add-btn {
+    display: inline-block;
+    padding: 12px 18px;
+    background: #27ae60;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: background 0.3s, transform 0.2s;
+    margin-bottom: 20px;
+}
+.add-btn:hover {
+    background: #1e8449;
+    transform: translateY(-2px);
+}
+
+/* CARD */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* TABLE STYLES */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+thead {
+    background: #2c3e50;
+}
+th {
+    color: #ecf0f1;
+    text-align: left;
+    padding: 14px 12px;
+    font-weight: 600;
+    font-size: 14px;
+}
+td {
+    padding: 12px 12px;
+    font-size: 14px;
+    vertical-align: middle;
+}
+tr {
+    transition: background 0.2s;
+}
+tr:hover {
+    background: #ecf0f1;
+}
+
+/* ACTION BUTTONS VERTICAL STACK */
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    text-align: center;
+    transition: transform 0.2s, opacity 0.2s;
+}
+.edit-btn {
+    background: #f39c12;
+}
+.edit-btn:hover {
+    background: #d68910;
+    transform: translateY(-1px);
+}
+.delete-btn {
+    background: #e74c3c;
+}
+.delete-btn:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
+/* RESPONSIVE TABLE */
+@media(max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead {
+        display: none;
+    }
+    tr {
+        margin-bottom: 15px;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        background: white;
+    }
+    td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 12px;
+    }
+    td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #7f8c8d;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <span>Admin Dashboard - Vehari Map</span>
+    <a href="/admin/logout" class="logout-btn">Logout</a>
+</div>
+
+<div class="container">
+
+    <!-- ADD BUTTON -->
+    <a href="/admin/add" class="add-btn">➕ Add New Hostel</a>
+
+    <!-- TABLE CARD -->
+    <div class="card">
+        <h3>Hostel List</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% hostels.forEach(h => { %>
+                <tr>
+                    <td data-label="Name"><%= h.name %></td>
+                    <td data-label="Address"><%= h.address %></td>
+                    <td data-label="Price">Rs. <%= h.price %></td>
+                    <td data-label="Actions" style="display:flex; flex-direction:column; gap:5px;">
+                        <a href="/admin/edit/<%= h._id %>" class="action-btn edit-btn">✏️ Edit</a>
+                        <a href="#" onclick="deleteHostel('<%= h._id %>')" class="action-btn delete-btn">🗑️ Delete</a>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function deleteHostel(id) {
+    if (!confirm("Are you sure you want to delete this hostel?")) return;
+    fetch(`/api/hostels/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        })
+        .catch(err => console.error(err));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Hostels</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+    button { padding: 5px 10px; margin: 2px; cursor: pointer; }
+    .delete { background-color: #FF4136; color: white; }
+    .edit { background-color: #1E90FF; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Admin Dashboard - Manage Hostels</h1>
+
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Address</th>
+      <th>Price</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+      <th>Description</th>
+      <th>Actions</th>
+    </tr>
+
+    <% hostels.forEach(h => { %>
+    <tr>
+      <td><%= h.name %></td>
+      <td><%= h.address %></td>
+      <td><%= h.price %></td>
+      <td><%= h.latitude %></td>
+      <td><%= h.longitude %></td>
+      <td><%= h.description %></td>
+      <td>
+        <button class="edit" onclick="editHostel('<%= h._id %>')">Edit</button>
+        <button class="delete" onclick="deleteHostel('<%= h._id %>')">Delete</button>
+      </td>
+    </tr>
+    <% }) %>
+  </table>
+
+  <button onclick="window.location.href='/admin/add'">Add New Hostel</button>
+
+  <script>
+    function editHostel(id) {
+      window.location.href = `/admin/edit/${id}`;
+    }
+
+    function deleteHostel(id) {
+      if (!confirm("Delete this hostel?")) return;
+      fetch(`/api/hostels/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          location.reload();
+        })
+        .catch(err => console.error(err));
+    }
+  </script>
+</body>
+</html>

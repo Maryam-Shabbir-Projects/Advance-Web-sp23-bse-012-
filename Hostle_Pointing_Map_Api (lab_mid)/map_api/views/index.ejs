@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehari City Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    position: relative;
+}
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+#map {
+    height: 600px;
+    width: 100%;
+    border: 2px solid #555;
+    border-radius: 8px;
+}
+
+/* Hostel name labels */
+.hostel-label {
+    background-color: white;
+    padding: 2px 6px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Top-right buttons */
+.top-buttons {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    z-index: 1000;
+}
+.top-buttons button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    margin-left: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+.top-buttons button:hover {
+    background-color: #0056b3;
+}
+</style>
+</head>
+<body>
+
+<h1>Vehari City Map 🗺️</h1>
+
+<!-- Top-right buttons -->
+<div class="top-buttons">
+    <button onclick="window.location.href='/admin'">Go to Admin Page</button>
+    <button onclick="window.location.href='/logout'">Logout</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+// -----------------------------
+// Initialize Map
+// -----------------------------
+const map = L.map('map', {
+    center: [30.045, 72.348],
+    zoom: 16,
+    scrollWheelZoom: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+}).addTo(map);
+
+// -----------------------------
+// Static Important Locations
+// -----------------------------
+const staticLocations = [
+    { coords: [30.0444, 72.3500], name: "Vehari Hospital" },
+    { coords: [30.046, 72.347], name: "Vehari Bus Stand" },
+    { coords: [30.0455, 72.349], name: "Market" }
+];
+
+staticLocations.forEach(loc => {
+    L.marker(loc.coords).addTo(map)
+        .bindTooltip(loc.name, { permanent: true, direction: "top", className: "hostel-label" })
+        .openTooltip();
+});
+
+// -----------------------------
+// Dynamic Hostel Markers
+// -----------------------------
+let hostelMarkers = [];
+
+function loadHostels() {
+    hostelMarkers.forEach(m => map.removeLayer(m));
+    hostelMarkers = [];
+
+    fetch('/api/hostels')
+        .then(res => res.json())
+        .then(data => {
+            const hostels = data.data || [];
+
+            hostels.forEach(h => {
+                const marker = L.marker([h.latitude, h.longitude]).addTo(map);
+
+                marker.bindTooltip(h.name, {
+                    permanent: true,
+                    direction: "top",
+                    offset: [0, -10],
+                    className: 'hostel-label'
+                }).openTooltip();
+
+                marker.on('click', () => {
+                    window.location.href = `/hostel/${h._id}`;
+                });
+
+                hostelMarkers.push(marker);
+            });
+        })
+        .catch(err => console.error("Error loading hostels:", err));
+}
+
+loadHostels();
+setInterval(loadHostels, 10000);
+
+</script>
+</body>
+</html>
