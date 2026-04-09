@@ -31,7 +31,8 @@ Table of Contents
 
 
 GitHub : https://github.com/Maryam-Shabbir-Projects/Advance-Web-sp23-bse-012-/new/main/Hostle_Pointing_Map_Api%20(lab_mid)
-Video Demonstration :  
+
+Video Demonstration :  https://drive.google.com/file/d/1Ny301eMuOZEYSiYu3gxM_nA3lSZNjGFE/view?usp=sharing
 
 1. Abstract
 This project is a web application that provides an interactive city map of Vehari, displaying hostels, landmarks, and supporting an admin dashboard for CRUD operations. Users can view hostel locations and details, while the admin can manage the hostel data.
