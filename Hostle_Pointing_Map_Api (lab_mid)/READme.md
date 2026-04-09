@@ -8,21 +8,6 @@ Instructor: Mam. Yasmeen Jana
 Date: 3/30/2026
 ________________________________________
 
-                                       
-	COMSATS University Islamabad
-                                                   Campus Vehari
-
-
-
-
-
-
-
-
-
-
-
-
 Table of Contents
 1.	Abstract
 2.	Introduction
@@ -47,6 +32,7 @@ Table of Contents
 
 GitHub : https://github.com/Maryam-Shabbir-Projects/Advance-Web-sp23-bse-012-/new/main/Hostle_Pointing_Map_Api%20(lab_mid)
 Video Demonstration :  
+
 1. Abstract
 This project is a web application that provides an interactive city map of Vehari, displaying hostels, landmarks, and supporting an admin dashboard for CRUD operations. Users can view hostel locations and details, while the admin can manage the hostel data.
 
@@ -91,7 +77,8 @@ Use Case 1: User Views Hostel
 Use Case 2: Admin Manages Hostels
 •	Actor: Admin
 •	Description: Admin logs in and manages hostels.
-•	Flow: Open /admin. Enter password. Add/Edit/Delete hostels.________________________________________
+•	Flow: Open /admin. Enter password. Add/Edit/Delete hostels.
+________________________________________
 8. API Endpoints
 Method	Endpoint	   Description
 GET	/api/hostels	   List all hostels
@@ -119,13 +106,11 @@ description	String	Additional info
 ________________________________________
 10. User Interface Screens
 1.	Registration Page(/register)
+   <img width="416" height="321" alt="image" src="https://github.com/user-attachments/assets/ea29294e-3b7e-4e78-a3ff-5c109867248b" />
+ 3.	 Login Page  (/login)
  
 
-
-2.	 Login Page  (/login)
- 
-
-3.	Admin Dashboard (/admin)
+4.	Admin Dashboard (/admin)
      
 
 o	List all hostels with Add/Edit/Delete options.
