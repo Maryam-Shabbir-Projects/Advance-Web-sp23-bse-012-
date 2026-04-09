@@ -105,32 +105,27 @@ longitude	Number	Longitude coordinates
 description	String	Additional info
 ________________________________________
 10. User Interface Screens
-1.	Registration Page(/register)
+ 1.	Registration Page(/register)
    <img width="416" height="321" alt="image" src="https://github.com/user-attachments/assets/ea29294e-3b7e-4e78-a3ff-5c109867248b" />
- 3.	 Login Page  (/login)
- 
-
-4.	Admin Dashboard (/admin)
-     
-
+ 2.	 Login Page  (/login)
+ <img width="543" height="405" alt="image" src="https://github.com/user-attachments/assets/3e3222b7-c7f6-4e4c-9217-33e7867f464c" />
+3.	Admin Dashboard (/admin)
+     <img width="561" height="342" alt="image" src="https://github.com/user-attachments/assets/d20f4178-0090-471d-95b1-74a64a671368" />
 o	List all hostels with Add/Edit/Delete options.
- 
+ <img width="780" height="382" alt="image" src="https://github.com/user-attachments/assets/61dbdc5c-d418-4fe7-b754-14e8f86ffe4d" />
 4.	Add Hostel (/admin/add)
 o	Form to input hostel info.
- 
- 
+ <img width="825" height="737" alt="image" src="https://github.com/user-attachments/assets/9ad555a8-e8bb-4b4c-8fda-2d6041951eb9" />
 5.	     Edit Hostel (/admin/edit/:id)
 o	Form populated with existing hostel info.
-
- 
- 
+<img width="746" height="540" alt="image" src="https://github.com/user-attachments/assets/fb339c8d-6b21-41f6-b67a-896f923a08b8" />
 6.	User Map (/)
 o	Map displaying hostel markers.
- 
+ <img width="1033" height="587" alt="image" src="https://github.com/user-attachments/assets/e53622ca-6979-4f39-9275-58d7eff47f6e" />
 7.	Hostel Detail (/hostel/:id)
 o	Hostel info and landmarks.
- 
-________________________________________
+ <img width="965" height="478" alt="image" src="https://github.com/user-attachments/assets/119d4f92-3aea-4245-be43-00b4af6a401f" />
+ _______________________________________
 11. Implementation Details
 Backend: Node.js + Express
 •	Routes are organized into hostelRoutes and adminRoutes.
