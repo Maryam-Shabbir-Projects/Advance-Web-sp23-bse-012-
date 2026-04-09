@@ -126,6 +126,7 @@ o	Map displaying hostel markers.
 o	Hostel info and landmarks.
  <img width="965" height="478" alt="image" src="https://github.com/user-attachments/assets/119d4f92-3aea-4245-be43-00b4af6a401f" />
  _______________________________________
+ 
 11. Implementation Details
 Backend: Node.js + Express
 •	Routes are organized into hostelRoutes and adminRoutes.
@@ -136,14 +137,16 @@ Frontend: EJS templates
 •	Home page with admin login prompt.
 Database: MongoDB + Mongoose
 •	Hostel schema with fields for name, address, price, latitude, longitude, description.
-•	CRUD operations connected to admin routes.
+•	CRUD operations connected to admin route
 
-12. Testing & Results
+
+13. Testing & Results
 •	Admin login tested with correct and incorrect password.
 •	CRUD operations tested successfully.
 •	API endpoint /api/hostels returns JSON correctly.
 •	User map shows accurate hostel markers.
 ________________________________________
+
 13. Conclusion
 The Vehari City Map project provides an interactive map interface for users and a full admin panel for hostel management. It implements secure admin login, functional CRUD operations, and responsive UI, making it scalable and maintainable.
 ________________________________________
