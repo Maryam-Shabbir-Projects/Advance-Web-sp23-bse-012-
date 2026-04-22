@@ -185,20 +185,28 @@ o	Map displaying hostel markers.
 o	Hostel info and landmarks.
  <img width="965" height="478" alt="image" src="https://github.com/user-attachments/assets/119d4f92-3aea-4245-be43-00b4af6a401f" />
 **11. ⚙️ Implementation Details**
+
 🔹 Backend: Node.js + Express
+
 Routes are organized into:
+
 hostelRoutes
 adminRoutes
 Middleware used for:
 Parsing JSON data
 Handling URL-encoded form data
 Basic authentication implemented using dummy middleware for admin/user roles
+
 🔹 Frontend: EJS Templates
+
 Dynamic rendering of hostel data and forms
 Reusable templates for consistency
 Home page includes admin login access
+
 🔹 Database: MongoDB + Mongoose
+
 Defined Hostel Schema with fields:
+
 Name
 Address
 Price
@@ -209,11 +217,17 @@ Full CRUD operations integrated with admin routes
 
 
 **12. 🧪 Testing & Results**
+
 ✅ Admin login tested with both valid and invalid credentials
+
 ✅ All CRUD operations (Create, Read, Update, Delete) working correctly
+
 ✅ API endpoint /api/hostels returns proper JSON data
+
 ✅ Map displays accurate hostel markers based on coordinates
+
 ✅ UI tested for responsiveness and usability
+
 **13. 🎯 Conclusion**
 
 The project successfully demonstrates a full-stack web application integrating maps, REST APIs, and database management. It provides a practical solution for hostel discovery in Vehari and showcases strong concepts of backend development and system design.
