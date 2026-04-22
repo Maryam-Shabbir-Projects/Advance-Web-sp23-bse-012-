@@ -163,9 +163,11 @@ This project is designed to help users easily locate hostels in Vehari using a m
 
 **10. 🖥️ User Interface Screens**
  1.	Registration Page(/register)
-   <img width="416" height="321" alt="image" src="https://github.com/user-attachments/assets/ea29294e-3b7e-4e78-a3ff-5c109867248b" />
+   <img width="1195" height="801" alt="image" src="https://github.com/user-attachments/assets/82e83d11-09ea-4e14-8b47-15aa2c07f53b" />
+
  2.	 Login Page  (/login)
- <img width="543" height="405" alt="image" src="https://github.com/user-attachments/assets/3e3222b7-c7f6-4e4c-9217-33e7867f464c" />
+ <img width="1158" height="709" alt="image" src="https://github.com/user-attachments/assets/d371a081-d503-4169-bdcd-45a2115d6fc4" />
+
 3.	Admin Dashboard (/admin)
      <img width="561" height="342" alt="image" src="https://github.com/user-attachments/assets/d20f4178-0090-471d-95b1-74a64a671368" />
 o	List all hostels with Add/Edit/Delete options.
