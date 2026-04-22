@@ -1,6 +1,4 @@
-Here’s a cleaner, more professional, and submission-ready version of your README/documentation. I’ve fixed structure, grammar, consistency, and made it look like a strong academic + GitHub project file.
 
----
 
 # **Vehari City Map – Hostel Management System (REST API System)**
 
